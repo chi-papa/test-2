@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClipSort — ブックマークレット</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;700;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e10;
+    --surface: #18181c;
+    --border: #2a2a32;
+    --accent: #c8f060;
+    --accent2: #60c8f0;
+    --text: #e8e8ee;
+    --muted: #666680;
+    --radius: 6px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 0;
+  }
+
+  .noise {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    opacity: .03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px;
+  }
+
+  .wrap { position: relative; z-index: 1; width: 100%; max-width: 560px; }
+
+  header { margin-bottom: 48px; }
+
+  .logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: clamp(32px, 6vw, 52px);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -.02em;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .sub {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* install card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 28px 24px;
+    margin-bottom: 24px;
+  }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: none; }
+
+  .step-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(200,240,96,.1);
+    border: 1px solid rgba(200,240,96,.25);
+    border-radius: 4px;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; line-height: 1.65; color: var(--text); }
+  .step-body strong { color: var(--accent2); font-weight: 700; }
+
+  /* bookmarklet drag link */
+  .bm-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent);
+    color: #0e0e10;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    margin-top: 8px;
+    cursor: grab;
+    transition: background .15s, transform .1s;
+    user-select: none;
+    border: none;
+  }
+  .bm-link:active { cursor: grabbing; transform: scale(.97); }
+  .bm-link:hover { background: #d4f472; }
+  .bm-link svg { flex-shrink: 0; }
+
+  /* how-to */
+  .how {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 28px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+  .how strong { color: var(--text); }
+
+  kbd {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    background: #222228;
+    border: 1px solid #3a3a46;
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: var(--accent2);
+  }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+<div class="wrap">
+  <header>
+    <p class="logo">Bookmarklet Tool</p>
+    <h1>Clip<span>Sort</span></h1>
+    <p class="sub">クリップボードのテキストを改行で分割し、<br>ドラッグ＆ドロップで並び替えてコピーします。</p>
+  </header>
+
+  <div class="card">
+    <p class="card-label">インストール</p>
+
+    <div class="step">
+      <span class="step-num">1</span>
+      <div class="step-body">ブラウザのブックマークバーを表示しておく<br><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> (Chrome/Edge) など</div>
+    </div>
+    <div class="step">
+      <span class="step-num">2</span>
+      <div class="step-body">下のボタンを<strong>ブックマークバーにドラッグ＆ドロップ</strong></div>
+    </div>
+    <div class="step">
+      <span class="step-num">3</span>
+      <div class="step-body">使いたいページでテキストを選択→コピー後、<strong>ブックマークをクリック</strong></div>
+    </div>
+
+    <!-- BOOKMARKLET LINK — href is the minified code -->
+    <a class="bm-link" id="bmLink" href="javascript:(function(){var t=[];try{navigator.clipboard.readText().then(function(txt){launch(txt)});}catch(e){var s=window.getSelection?window.getSelection().toString():'';launch(s);}function launch(txt){if(!txt.trim()){alert('クリップボードが空です。\nテキストをコピーしてから実行してください。');return;}var lines=txt.split(/\r?\n/).filter(function(l){return l.trim()!=='';});if(lines.length===0){alert('テキストが取得できませんでした。');return;}var ov=document.createElement('div');ov.id='_clipsort_ov';Object.assign(ov.style,{position:'fixed',inset:'0',zIndex:'2147483647',background:'rgba(14,14,16,.85)',backdropFilter:'blur(6px)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'});var box=document.createElement('div');Object.assign(box.style,{background:'#18181c',border:'1px solid #2a2a32',borderRadius:'14px',padding:'24px',width:'min(520px,90vw)',maxHeight:'80vh',display:'flex',flexDirection:'column',gap:'14px',boxShadow:'0 32px 80px rgba(0,0,0,.7)'});var hdr=document.createElement('div');Object.assign(hdr.style,{display:'flex',alignItems:'center',justifyContent:'space-between'});var ttl=document.createElement('span');ttl.textContent='ClipSort';Object.assign(ttl.style,{color:'#c8f060',fontWeight:'700',fontSize:'16px',letterSpacing:'-.01em'});var cls=document.createElement('button');cls.textContent='✕';Object.assign(cls.style,{background:'none',border:'none',color:'#666680',cursor:'pointer',fontSize:'18px',lineHeight:'1',padding:'0'});cls.onclick=function(){document.body.removeChild(ov);};hdr.appendChild(ttl);hdr.appendChild(cls);var hint=document.createElement('p');hint.textContent='ドラッグして並び替え → コピーボタンでクリップボードへ';Object.assign(hint.style,{color:'#666680',fontSize:'12px',margin:'0'});var list=document.createElement('div');Object.assign(list.style,{overflowY:'auto',display:'flex',flexDirection:'column',gap:'6px',flex:'1',minHeight:'60px'});var dragSrc=null;function makeItem(text){var item=document.createElement('div');item.textContent=text;item.draggable=true;Object.assign(item.style,{background:'#222228',border:'1px solid #2a2a32',borderRadius:'7px',padding:'9px 12px',cursor:'grab',fontSize:'13px',color:'#e8e8ee',lineHeight:'1.5',userSelect:'none',transition:'border-color .15s,background .15s'});item.addEventListener('dragstart',function(e){dragSrc=item;item.style.opacity='.4';e.dataTransfer.effectAllowed='move';});item.addEventListener('dragend',function(){item.style.opacity='1';dragSrc=null;document.querySelectorAll('._cs_over').forEach(function(el){el.classList.remove('_cs_over');el.style.borderColor='#2a2a32';});});item.addEventListener('dragover',function(e){e.preventDefault();e.dataTransfer.dropEffect='move';item.style.borderColor='#c8f060';item.classList.add('_cs_over');});item.addEventListener('dragleave',function(){item.style.borderColor='#2a2a32';item.classList.remove('_cs_over');});item.addEventListener('drop',function(e){e.preventDefault();item.style.borderColor='#2a2a32';item.classList.remove('_cs_over');if(dragSrc&&dragSrc!==item){var items=Array.from(list.children);var si=items.indexOf(dragSrc);var di=items.indexOf(item);if(si<di){list.insertBefore(dragSrc,item.nextSibling);}else{list.insertBefore(dragSrc,item);}}});return item;}lines.forEach(function(l){list.appendChild(makeItem(l));});var footer=document.createElement('div');Object.assign(footer.style,{display:'flex',gap:'8px',justifyContent:'flex-end'});var copyBtn=document.createElement('button');copyBtn.textContent='📋 コピー';Object.assign(copyBtn.style,{background:'#c8f060',color:'#0e0e10',border:'none',borderRadius:'6px',padding:'9px 20px',cursor:'pointer',fontWeight:'700',fontSize:'13px',transition:'background .15s'});copyBtn.onmouseenter=function(){copyBtn.style.background='#d4f472';};copyBtn.onmouseleave=function(){copyBtn.style.background='#c8f060';};copyBtn.onclick=function(){var result=Array.from(list.children).map(function(el){return el.textContent;}).join('\n');navigator.clipboard.writeText(result).then(function(){copyBtn.textContent='✓ コピーしました';setTimeout(function(){copyBtn.textContent='📋 コピー';},2000);});};footer.appendChild(copyBtn);box.appendChild(hdr);box.appendChild(hint);box.appendChild(list);box.appendChild(footer);ov.appendChild(box);document.body.appendChild(ov);}})();" draggable="true" title="ここをブックマークバーへドラッグ">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="#0e0e10" stroke-width="1.5"/>
+        <path d="M5 8h6M8 5v6" stroke="#0e0e10" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      ClipSort — ここをドラッグ
+    </a>
+  </div>
+
+  <div class="how">
+    <strong>使い方</strong><br>
+    ① 並び替えたいテキストを選択して <kbd>Ctrl</kbd>+<kbd>C</kbd><br>
+    ② ブックマークの <strong>ClipSort</strong> をクリック<br>
+    ③ 行をドラッグして順番を変える<br>
+    ④ <strong>📋 コピー</strong> ボタン → ペーストするだけ
+  </div>
+</div>
+</body>
+</html>
